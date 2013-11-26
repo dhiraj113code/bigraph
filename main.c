@@ -4,6 +4,7 @@
 #include <string.h>
 #include "main.h"
 #include "biconn.h"
+#define FILE_NAME_SIZE 100
 
 static int nVert = 0;
 static int **adjlist; //Adjacency list representation of input vertices
@@ -11,10 +12,11 @@ static int *nEdges;
 
 int main(int argc, char **argv)
 {
-
 FILE *input;
-char fname[] = "1.in";
-
+if(argc !=2) {printf("Wrong number of input arguments specified\n"); exit(-1);}
+char *fname;
+fname = (char*)malloc(sizeof(char)*FILE_NAME_SIZE);
+fname = argv[1];
 read_file(fname);
 printAdjList();
 
@@ -93,5 +95,4 @@ for(i = 0; i < nVert; i++)
    }
    printf("\n");
 }
-
 }
