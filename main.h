@@ -23,3 +23,5 @@ void biconn(int node);
 int read_file(char fname[]);
 void printAdjList();
 void initializeNallmem();
+void printVertices();
+char colorSymbol(int color_value);

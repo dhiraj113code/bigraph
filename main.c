@@ -3,15 +3,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
-#include "biconn.h"
 #define FILE_NAME_SIZE 100
-#define DEBUG FALSE
+#define DEBUG TRUE
 
 
 static int nVert = 0;
 static int **adjlist; //Adjacency list representation of input vertices
 static int *nEdges;
 static Pvertex *vertices;
+static int *artPoints;
+static int **biconnComps;
+static int Ncalls = 0;
+static int Gnum = 0;
+static FILE *logfile;
 
 int main(int argc, char **argv)
 {
@@ -22,25 +26,45 @@ fname = (char*)malloc(sizeof(char)*FILE_NAME_SIZE);
 fname = argv[1];
 read_file(fname);
 if(DEBUG) printAdjList();
+
+logfile = fopen("debug.log", "w");
 initializeNallmem();
 biconn(vertices[0]->node);
+printf("Number of calls to biconn = %d\n", Ncalls);
+fclose(logfile);
 }
 
 
 
 void biconn(int node)
 {
-  int i, index, test_node, test_node_index;
-  printf("biconn is called with the node = %d\n", node);
+  printVertices();
+  Ncalls++;
+  
+  int i, index, test_node, test_node_index, node_color;
   index = node - 1;
+
+  Gnum++;
+  vertices[index]->color = GRAY;
+  vertices[index]->num = Gnum;
   //Loop over the vertices in the adjacency list for this node
   for(i = 1; i < nEdges[index] + 1; i++)
   {
-     vertices[index]->color = GRAY;
      test_node = adjlist[index][i];
      test_node_index = test_node - 1;
-     if(vertices[test_node_index]->color == WHITE)
+     node_color = vertices[test_node_index]->color;
+     if(node_color == WHITE)
+     {
         biconn(test_node);
+     }
+     else if(node_color == GRAY)
+     {
+
+     }
+     else if(node_color == BLACK)
+     {
+ 
+     }
   }
 }
 
@@ -134,5 +158,42 @@ for(i = 0; i < nVert; i++)
    vertices[i]->num = 0;
    vertices[i]->low = LARGE_NEG_NUMB;
    vertices[i]->color = WHITE;
+}
+}
+
+
+void printVertices()
+{
+int i;
+int node, num, low, color;
+fprintf(logfile, "----------------------------%d------------------------------\n", Ncalls);
+for(i = 0; i < nVert; i++)
+{
+   node = vertices[i]->node;
+   num = vertices[i]->num;
+   low = vertices[i]->low;
+   color = vertices[i]->color;
+   fprintf(logfile, "node = %d, num = %d, low =  %d, color = %c\n", node, num, low, colorSymbol(color));
+}
+fprintf(logfile, "------------------------------------------------------------\n");
+}
+
+char colorSymbol(int color_value)
+{
+char c;
+switch(color_value)
+{
+   case WHITE:
+      return 'W';
+      break;
+   case GRAY:
+      return 'G';
+      break;
+   case BLACK:
+      return 'B';
+      break;
+   default:
+      printf("error_info : Unknown color\n");
+      exit(-1);
 }
 }
