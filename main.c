@@ -25,6 +25,9 @@ static FILE *stackfile;
 
 int main(int argc, char **argv)
 {
+/* initialize random seed: */
+  srand (time(NULL));
+
 FILE *input;
 if(argc !=2) {printf("Wrong number of input arguments specified\n"); exit(-1);}
 char *fname;
@@ -36,7 +39,10 @@ if(DEBUG && MORESTATS) printAdjList();
 if(DEBUG) logfile = fopen("debug.log", "w");
 if(DEBUG) stackfile = fopen("stack.log", "w");
 initializeNallmem();
-biconn(vertices[0]->node, DUMMY_PARENT);
+
+int start_index = rand() % nVert;
+printf("start_node = %d\n", start_index + 1);
+biconn(vertices[start_index]->node, DUMMY_PARENT);
 printArtPoints();
 printBiconnComponents();
 if(DEBUG) fclose(logfile);
