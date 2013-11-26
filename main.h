@@ -5,3 +5,4 @@
 #define MAX_GRAPH_SIZE 100
 
 int read_file(char fname[]);
+void printAdjList();

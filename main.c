@@ -5,17 +5,18 @@
 #include "main.h"
 #include "biconn.h"
 
-
+static int nVert = 0;
 static int **adjlist; //Adjacency list representation of input vertices
+static int *nEdges;
 
 int main(int argc, char **argv)
 {
 
 FILE *input;
-int **adjlist; //Adjlist representation of the input graph
 char fname[] = "1.in";
 
 read_file(fname);
+printAdjList();
 
 }
 
@@ -40,12 +41,12 @@ int read_file(char fname[])
          lines++;
       }
    }
-   printf("debug_info : Number of lines = %d\n", lines);
    fclose(pFile);
 
+   nVert = lines;
    //Allocating memory for integers array pointers
-   //adjlist = *Padjlist;
-   adjlist = (int**)malloc(sizeof(int*)*lines);
+   adjlist = (int**)malloc(sizeof(int*)*nVert);
+   nEdges = (int*)malloc(sizeof(int)*nVert);
 
    //Reading the file again
    pFile = fopen(fname , "r");
@@ -62,24 +63,35 @@ int read_file(char fname[])
          {
             if(mystring[j] == ' ') spaces++;
          }
-         //printf("spaces = %d\n", spaces);
 
+         nEdges[k] = spaces;
          //Allocating appropriate memory
          adjlist[k] = (int*)malloc(sizeof(int)*(spaces+1));
          pEnd = mystring;
          i = 0;
          while(i < spaces+1)
          {
-            //printf("pend = %s\n", pEnd);
-            //printf("i = %d\n", i);
             adjlist[k][i] = strtol(pEnd, &pEnd, 10);
-            printf("%d\n", adjlist[k][i]);
             i++;
          }
-         printf("%s", mystring);
          k++;
       }
      fclose (pFile);
    }
    return 0;
+}
+
+
+void printAdjList()
+{
+int i,j;
+for(i = 0; i < nVert; i++)
+{
+   for(j = 0; j < nEdges[i] + 1; j++)
+   {
+      printf("%d ", adjlist[i][j]);
+   }
+   printf("\n");
+}
+
 }
