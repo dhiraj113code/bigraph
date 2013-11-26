@@ -5,10 +5,13 @@
 #include "main.h"
 #include "biconn.h"
 #define FILE_NAME_SIZE 100
+#define DEBUG FALSE
+
 
 static int nVert = 0;
 static int **adjlist; //Adjacency list representation of input vertices
 static int *nEdges;
+static Pvertex *vertices;
 
 int main(int argc, char **argv)
 {
@@ -18,8 +21,27 @@ char *fname;
 fname = (char*)malloc(sizeof(char)*FILE_NAME_SIZE);
 fname = argv[1];
 read_file(fname);
-printAdjList();
+if(DEBUG) printAdjList();
+initializeNallmem();
+biconn(vertices[0]->node);
+}
 
+
+
+void biconn(int node)
+{
+  int i, index, test_node, test_node_index;
+  printf("biconn is called with the node = %d\n", node);
+  index = node - 1;
+  //Loop over the vertices in the adjacency list for this node
+  for(i = 1; i < nEdges[index] + 1; i++)
+  {
+     vertices[index]->color = GRAY;
+     test_node = adjlist[index][i];
+     test_node_index = test_node - 1;
+     if(vertices[test_node_index]->color == WHITE)
+        biconn(test_node);
+  }
 }
 
 
@@ -94,5 +116,23 @@ for(i = 0; i < nVert; i++)
       printf("%d ", adjlist[i][j]);
    }
    printf("\n");
+}
+}
+
+
+void initializeNallmem()
+{
+int i;
+//Allocating memory for vertices of type vertex data structure
+vertices = (Pvertex*)malloc(sizeof(Pvertex)*nVert);
+
+//Initialize vertex nodes
+for(i = 0; i < nVert; i++)
+{
+   vertices[i] = (Pvertex)malloc(sizeof(vertex));
+   vertices[i]->node = i + 1; //Node numbering starts from 1 
+   vertices[i]->num = 0;
+   vertices[i]->low = LARGE_NEG_NUMB;
+   vertices[i]->color = WHITE;
 }
 }
