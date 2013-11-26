@@ -10,6 +10,8 @@
 #define GRAY 1
 #define BLACK 2
 
+#define DUMMY_PARENT -1
+
 typedef struct vertex_ {
    unsigned node;
    unsigned num;
@@ -18,10 +20,11 @@ typedef struct vertex_ {
 } vertex, *Pvertex;
 
 
-void biconn(int node);
+void biconn(int node, int parent);
 
 int read_file(char fname[]);
 void printAdjList();
 void initializeNallmem();
 void printVertices();
 char colorSymbol(int color_value);
+int getLow(int a, int b);

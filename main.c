@@ -29,24 +29,28 @@ if(DEBUG) printAdjList();
 
 logfile = fopen("debug.log", "w");
 initializeNallmem();
-biconn(vertices[0]->node);
+biconn(vertices[0]->node, DUMMY_PARENT);
 printf("Number of calls to biconn = %d\n", Ncalls);
+printVertices();
 fclose(logfile);
 }
 
 
 
-void biconn(int node)
+void biconn(int node, int parent)
 {
   printVertices();
   Ncalls++;
   
-  int i, index, test_node, test_node_index, node_color;
+  int i, index, test_node, test_node_index, node_color, new_parent, parent_index;
   index = node - 1;
+  parent_index = parent - 1;
 
   Gnum++;
   vertices[index]->color = GRAY;
   vertices[index]->num = Gnum;
+  vertices[index]->low = vertices[index]->num;
+  new_parent = node;
   //Loop over the vertices in the adjacency list for this node
   for(i = 1; i < nEdges[index] + 1; i++)
   {
@@ -55,17 +59,30 @@ void biconn(int node)
      node_color = vertices[test_node_index]->color;
      if(node_color == WHITE)
      {
-        biconn(test_node);
+        biconn(test_node, new_parent);
      }
-     else if(node_color == GRAY)
+     else if(node_color == GRAY && test_node != parent) //Back edge to the parent
+     {
+        //Lesser but now parent, pass on the goodness
+        vertices[index]->low = getLow(vertices[index]->low , vertices[test_node_index]->low);
+     }
+  }
+  //Backtracking to parent
+  if(parent != DUMMY_PARENT)
+  {
+     if(vertices[index]->low <= vertices[parent_index]->low )
+     {
+        vertices[parent_index]->low = vertices[index]->low;
+     }
+     else //Break the bond
      {
 
      }
-     else if(node_color == BLACK)
-     {
- 
-     }
   }
+
+
+  //When all nodes reachable from a particular node are reached, color the node black
+  vertices[index]->color = BLACK;
 }
 
 
@@ -196,4 +213,12 @@ switch(color_value)
       printf("error_info : Unknown color\n");
       exit(-1);
 }
+}
+
+int getLow(int a, int b)
+{
+   if( a <= b)
+      return a;
+   else
+      return b;
 }
