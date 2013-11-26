@@ -17,6 +17,7 @@ typedef struct vertex_ {
    unsigned num;
    unsigned low;
    unsigned color;
+   unsigned stackPos;
 } vertex, *Pvertex;
 
 
@@ -28,3 +29,6 @@ void initializeNallmem();
 void printVertices();
 char colorSymbol(int color_value);
 int getLow(int a, int b);
+void printArtPoints();
+void printBiconnComponents();
+void printStack();

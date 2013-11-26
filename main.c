@@ -4,18 +4,24 @@
 #include <string.h>
 #include "main.h"
 #define FILE_NAME_SIZE 100
-#define DEBUG TRUE
-
+#define DEBUG FALSE 
+#define MORESTATS FALSE
 
 static int nVert = 0;
 static int **adjlist; //Adjacency list representation of input vertices
 static int *nEdges;
 static Pvertex *vertices;
 static int *artPoints;
+static int *vertexStack;
 static int **biconnComps;
+static int *bcLength;
 static int Ncalls = 0;
 static int Gnum = 0;
+static int artIndex = 0;
+static int stackEnd;
+static int bcI = 0;
 static FILE *logfile;
+static FILE *stackfile;
 
 int main(int argc, char **argv)
 {
@@ -25,24 +31,27 @@ char *fname;
 fname = (char*)malloc(sizeof(char)*FILE_NAME_SIZE);
 fname = argv[1];
 read_file(fname);
-if(DEBUG) printAdjList();
+if(DEBUG && MORESTATS) printAdjList();
 
-logfile = fopen("debug.log", "w");
+if(DEBUG) logfile = fopen("debug.log", "w");
+if(DEBUG) stackfile = fopen("stack.log", "w");
 initializeNallmem();
 biconn(vertices[0]->node, DUMMY_PARENT);
-printf("Number of calls to biconn = %d\n", Ncalls);
-printVertices();
-fclose(logfile);
+printArtPoints();
+printBiconnComponents();
+if(DEBUG) fclose(logfile);
+if(DEBUG) fclose(stackfile);
 }
 
 
 
 void biconn(int node, int parent)
 {
-  printVertices();
+  if(DEBUG) printStack(FALSE);
+  if(DEBUG) printVertices();
   Ncalls++;
   
-  int i, index, test_node, test_node_index, node_color, new_parent, parent_index;
+  int i, index, test_node, test_node_index, node_color, new_parent, parent_index, parent_stackPos;
   index = node - 1;
   parent_index = parent - 1;
 
@@ -51,6 +60,12 @@ void biconn(int node, int parent)
   vertices[index]->num = Gnum;
   vertices[index]->low = vertices[index]->num;
   new_parent = node;
+
+  //Push it onto the vertex stack
+  vertexStack[stackEnd] = node;
+  vertices[index]->stackPos = stackEnd;
+  stackEnd++; 
+  
   //Loop over the vertices in the adjacency list for this node
   for(i = 1; i < nEdges[index] + 1; i++)
   {
@@ -70,17 +85,35 @@ void biconn(int node, int parent)
   //Backtracking to parent
   if(parent != DUMMY_PARENT)
   {
-     if(vertices[index]->low <= vertices[parent_index]->low )
+     if(vertices[index]->low < vertices[parent_index]->low )
      {
         vertices[parent_index]->low = vertices[index]->low;
      }
      else //Break the bond
      {
+        //Parent is an articulation point
+        artPoints[artIndex] = parent;
+        artIndex++;
 
+        //Peel off the vertices to the right of the articulation point in the stack
+        //To get the biconnected components
+        parent_stackPos = vertices[parent_index]->stackPos;
+        bcLength[bcI] = stackEnd - parent_stackPos; 
+        biconnComps[bcI] = (int*)malloc(sizeof(int)*bcLength[bcI]);
+     
+        if(DEBUG) printStack(TRUE); 
+        i = 0;
+        while(stackEnd > parent_stackPos) //peel elements to the right in the stack array
+        {
+           biconnComps[bcI][i] = vertexStack[stackEnd-1];
+           stackEnd--;
+           i++;
+        }
+        stackEnd++;
+        if(DEBUG) printStack(TRUE);
+        bcI++;
      }
   }
-
-
   //When all nodes reachable from a particular node are reached, color the node black
   vertices[index]->color = BLACK;
 }
@@ -176,6 +209,16 @@ for(i = 0; i < nVert; i++)
    vertices[i]->low = LARGE_NEG_NUMB;
    vertices[i]->color = WHITE;
 }
+
+//Allocating maximing possible memory for articulation points
+artPoints = (int*)malloc(sizeof(int)*nVert);
+
+vertexStack = (int*)malloc(sizeof(int)*nVert);
+stackEnd = 0;
+
+//Allocating memory for biconnected components
+biconnComps = (int**)malloc(sizeof(int*)*nVert);
+bcLength = (int*)malloc(sizeof(int)*nVert);
 }
 
 
@@ -221,4 +264,45 @@ int getLow(int a, int b)
       return a;
    else
       return b;
+}
+
+void printArtPoints()
+{
+   int i;
+   printf("Articulation points\n");
+   printf("----------------------------------------------------------\n");
+   for(i = 0; i < artIndex; i++)
+   {
+      printf("%d ", artPoints[i]);
+   }
+   printf("\n");
+   printf("----------------------------------------------------------\n");
+}
+
+
+void printBiconnComponents()
+{
+int i,j;
+printf("Biconnected component vertices\n");
+printf("----------------------------------------------------------\n");
+for(i = 0; i < bcI; i++)
+{
+   for(j = 0; j < bcLength[i]; j++)
+   {
+      printf("%d ", biconnComps[i][j]);
+   }
+   printf("\n");
+}
+printf("----------------------------------------------------------\n");
+}
+
+
+void printStack(int isPeel)
+{
+int i;
+if(isPeel) fprintf(stackfile, "----------------------------------------------------------\n");
+for(i = 0; i < stackEnd; i++)
+   fprintf(stackfile, "%d ", vertexStack[i]);
+fprintf(stackfile, "\n");
+if(isPeel) fprintf(stackfile, "----------------------------------------------------------\n");
 }
