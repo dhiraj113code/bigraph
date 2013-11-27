@@ -20,8 +20,13 @@ static int Gnum = 0;
 static int artIndex = 0;
 static int stackEnd;
 static int bcI = 0;
-static FILE *logfile;
-static FILE *stackfile;
+static FILE *logfile, *stackfile, *edgelog;
+
+//Edge stack used for computign biconnected components
+static totalEdges = 0;
+static Pedge *edgeStack;
+static int eS_right = 0;
+static int eS_left = 0;
 
 int main(int argc, char **argv)
 {
@@ -38,17 +43,18 @@ if(DEBUG && MORESTATS) printAdjList();
 
 if(DEBUG) logfile = fopen("debug.log", "w");
 if(DEBUG) stackfile = fopen("stack.log", "w");
+if(DEBUG)  edgelog = fopen("edge.log", "w");
 initializeNallmem();
 
 int start_index = rand() % nVert;
 //start_index = 0;
 printf("start_node = %d\n", start_index + 1);
 biconn(vertices[start_index]->node, DUMMY_PARENT);
-//biconn(2,-1);
 printArtPoints();
-//printBiconnComponents();
 if(DEBUG) fclose(logfile);
 if(DEBUG) fclose(stackfile);
+if(DEBUG) fclose(edgelog);
+printf("total edges = %d\n", totalEdges);
 }
 
 
@@ -57,9 +63,12 @@ void biconn(int node, int parent)
 {
   if(DEBUG) printStack(FALSE);
   if(DEBUG) printVertices();
+  if(DEBUG) printEdgeStack(TREE_EDGE); 
+
   Ncalls++;
   
   int i, index, test_node, test_node_index, node_color, new_parent, parent_index;
+  int eS_corr = 0;
   index = node - 1;
   parent_index = parent - 1;
 
@@ -82,6 +91,10 @@ void biconn(int node, int parent)
      node_color = vertices[test_node_index]->color;
      if(node_color == WHITE) //forward edge
      {
+        edgeStack[eS_right]->tail = node;
+        edgeStack[eS_right]->head = test_node;
+        eS_right++;
+        eS_left++;
         biconn(test_node, new_parent);
      }
      else if(node_color == GRAY && test_node != parent) //Back edge not to the parent
@@ -92,6 +105,12 @@ void biconn(int node, int parent)
            vertices[index]->low = getLow(vertices[index]->low , vertices[test_node_index]->num);
 
            //Push edge on to the stack
+           edgeStack[eS_right]->tail = node;
+           edgeStack[eS_right]->head = test_node;
+           eS_right++;
+           eS_left++;
+           eS_corr++;
+           if(DEBUG) printEdgeStack(FORWARD_EDGE);
         }
         else
         {
@@ -106,12 +125,22 @@ void biconn(int node, int parent)
      if(vertices[index]->low < vertices[parent_index]->num )
      {
         //Move back the current element stack pointer
+        eS_left--;
+        eS_left -= eS_corr;
+        if(DEBUG) printEdgeStack(BACKWARD_EDGE);
      }
      else //Break the bond
      {
         //Parent is an articulation point
         artPoints[artIndex] = parent;
         artIndex++;
+
+        //Strip out the edges corresponding to this articulatio point
+        eS_left--;
+        eS_left -= eS_corr;
+        printBiconn(eS_left, eS_right);
+        eS_right = eS_left; //Elements between eS_left, eS_right are popped out
+        if(DEBUG) printEdgeStack(ARTICULATE_EDGE);
      }
      //When all nodes reachable from a particular node are reached, color the node black
      vertices[index]->color = BLACK;
@@ -163,6 +192,7 @@ int read_file(char fname[])
          }
 
          nEdges[k] = spaces;
+         totalEdges += spaces;
          //Allocating appropriate memory
          adjlist[k] = (int*)malloc(sizeof(int)*(spaces+1));
          pEnd = mystring;
@@ -219,6 +249,13 @@ stackEnd = 0;
 //Allocating memory for biconnected components
 biconnComps = (int**)malloc(sizeof(int*)*nVert);
 bcLength = (int*)malloc(sizeof(int)*nVert);
+
+//Allocating memory of edgeStack
+edgeStack = (Pedge*)malloc(sizeof(Pedge)*totalEdges);
+for(i = 0; i < totalEdges; i++)
+{
+   edgeStack[i] = (Pedge)malloc(sizeof(edge));
+}
 }
 
 
@@ -279,24 +316,6 @@ void printArtPoints()
    printf("----------------------------------------------------------\n");
 }
 
-
-void printBiconnComponents()
-{
-int i,j;
-printf("Biconnected component vertices\n");
-printf("----------------------------------------------------------\n");
-for(i = 0; i < bcI; i++)
-{
-   for(j = 0; j < bcLength[i]; j++)
-   {
-      printf("%d ", biconnComps[i][j]);
-   }
-   printf("\n");
-}
-printf("----------------------------------------------------------\n");
-}
-
-
 void printStack(int isPeel)
 {
 int i;
@@ -305,4 +324,48 @@ for(i = 0; i < stackEnd; i++)
    fprintf(stackfile, "%d ", vertexStack[i]);
 fprintf(stackfile, "\n");
 if(isPeel) fprintf(stackfile, "----------------------------------------------------------\n");
+}
+
+
+void printEdgeStack(int edgeType)
+{
+int i;
+char c;
+switch(edgeType)
+{
+   case TREE_EDGE:
+      c = 'T';
+      break;
+   case FORWARD_EDGE:
+      c = 'F';
+      break;
+   case BACKWARD_EDGE:
+      c = 'B';
+      break;
+   case ARTICULATE_EDGE:
+      c = 'A';
+      break;
+   default:
+      printf("error_info : Unknown edge type\n");
+      exit(-1);
+}
+
+fprintf(edgelog, "(%c)l=%d, r =%d : ", c, eS_left, eS_right);
+for(i = 0; i < eS_left; i++)
+   fprintf(edgelog, "(%d,%d),  ", edgeStack[i]->tail, edgeStack[i]->head);
+fprintf(edgelog, "|||");
+for(i = eS_left; i < eS_right; i++)
+   fprintf(edgelog, "(%d,%d),  ", edgeStack[i]->tail, edgeStack[i]->head);
+fprintf(edgelog, "\n");
+}
+
+
+void printBiconn(int left, int right)
+{
+int i;
+for(i = left; i < right; i++)
+{
+   printf("(%d,%d) ", edgeStack[i]->tail, edgeStack[i]->head);
+}
+printf("\n");
 }

@@ -12,6 +12,11 @@
 
 #define DUMMY_PARENT -1
 
+#define TREE_EDGE 0
+#define FORWARD_EDGE 1
+#define BACKWARD_EDGE 2
+#define ARTICULATE_EDGE 3
+
 typedef struct vertex_ {
    unsigned node;
    unsigned num;
@@ -19,6 +24,12 @@ typedef struct vertex_ {
    unsigned color;
    unsigned stackPos;
 } vertex, *Pvertex;
+
+
+typedef struct edge_ {
+   unsigned tail;
+   unsigned head;
+} edge, *Pedge;
 
 
 void biconn(int node, int parent);
@@ -30,5 +41,6 @@ void printVertices();
 char colorSymbol(int color_value);
 int getLow(int a, int b);
 void printArtPoints();
-void printBiconnComponents();
 void printStack();
+void printEdgeStack(int edgeType);
+void printBiconn(int left, int right);
