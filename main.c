@@ -26,7 +26,6 @@ static FILE *logfile, *stackfile, *edgelog;
 static totalEdges = 0;
 static Pedge *edgeStack;
 static int eS_right = 0;
-static int eS_left = 0;
 
 int main(int argc, char **argv)
 {
@@ -63,12 +62,12 @@ void biconn(int node, int parent)
 {
   if(DEBUG) printStack(FALSE);
   if(DEBUG) printVertices();
-  if(DEBUG) printEdgeStack(TREE_EDGE); 
 
   Ncalls++;
+  int eS_left = eS_right; //eS_left is local
+  if(DEBUG) printEdgeStack(TREE_EDGE, eS_left);
   
   int i, index, test_node, test_node_index, node_color, new_parent, parent_index;
-  int eS_corr = 0;
   index = node - 1;
   parent_index = parent - 1;
 
@@ -94,7 +93,6 @@ void biconn(int node, int parent)
         edgeStack[eS_right]->tail = node;
         edgeStack[eS_right]->head = test_node;
         eS_right++;
-        eS_left++;
         biconn(test_node, new_parent);
      }
      else if(node_color == GRAY && test_node != parent) //Back edge not to the parent
@@ -108,9 +106,7 @@ void biconn(int node, int parent)
            edgeStack[eS_right]->tail = node;
            edgeStack[eS_right]->head = test_node;
            eS_right++;
-           eS_left++;
-           eS_corr++;
-           if(DEBUG) printEdgeStack(FORWARD_EDGE);
+           if(DEBUG) printEdgeStack(FORWARD_EDGE, eS_left);
         }
         else
         {
@@ -125,9 +121,7 @@ void biconn(int node, int parent)
      if(vertices[index]->low < vertices[parent_index]->num )
      {
         //Move back the current element stack pointer
-        eS_left--;
-        eS_left -= eS_corr;
-        if(DEBUG) printEdgeStack(BACKWARD_EDGE);
+        if(DEBUG) printEdgeStack(BACKWARD_EDGE, eS_left);
      }
      else //Break the bond
      {
@@ -136,11 +130,9 @@ void biconn(int node, int parent)
         artIndex++;
 
         //Strip out the edges corresponding to this articulatio point
-        eS_left--;
-        eS_left -= eS_corr;
-        printBiconn(eS_left, eS_right);
-        eS_right = eS_left; //Elements between eS_left, eS_right are popped out
-        if(DEBUG) printEdgeStack(ARTICULATE_EDGE);
+        printBiconn(eS_left-1, eS_right);
+        eS_right = eS_left-1;
+        if(DEBUG) printEdgeStack(ARTICULATE_EDGE, eS_left);
      }
      //When all nodes reachable from a particular node are reached, color the node black
      vertices[index]->color = BLACK;
@@ -327,7 +319,7 @@ if(isPeel) fprintf(stackfile, "-------------------------------------------------
 }
 
 
-void printEdgeStack(int edgeType)
+void printEdgeStack(int edgeType, int left)
 {
 int i;
 char c;
@@ -350,11 +342,11 @@ switch(edgeType)
       exit(-1);
 }
 
-fprintf(edgelog, "(%c)l=%d, r =%d : ", c, eS_left, eS_right);
-for(i = 0; i < eS_left; i++)
+fprintf(edgelog, "(%c)l=%d, r =%d : ", c, left, eS_right);
+for(i = 0; i < left; i++)
    fprintf(edgelog, "(%d,%d),  ", edgeStack[i]->tail, edgeStack[i]->head);
 fprintf(edgelog, "|||");
-for(i = eS_left; i < eS_right; i++)
+for(i = left; i < eS_right; i++)
    fprintf(edgelog, "(%d,%d),  ", edgeStack[i]->tail, edgeStack[i]->head);
 fprintf(edgelog, "\n");
 }

@@ -42,5 +42,5 @@ char colorSymbol(int color_value);
 int getLow(int a, int b);
 void printArtPoints();
 void printStack();
-void printEdgeStack(int edgeType);
+void printEdgeStack(int edgeType, int left);
 void printBiconn(int left, int right);
