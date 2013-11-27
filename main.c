@@ -95,6 +95,7 @@ void biconn(int node, int parent)
         }
         else
         {
+           printf("debug_info : I deduce that this will never occur\n");
         }
      }
   }
@@ -104,6 +105,7 @@ void biconn(int node, int parent)
      vertices[parent_index]->low = getLow(vertices[parent_index]->low, vertices[index]->low);
      if(vertices[index]->low < vertices[parent_index]->num )
      {
+        //Move back the current element stack pointer
      }
      else //Break the bond
      {
