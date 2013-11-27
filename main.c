@@ -4,8 +4,8 @@
 #include <string.h>
 #include "main.h"
 #define FILE_NAME_SIZE 100
-#define DEBUG FALSE 
-#define MORESTATS FALSE
+#define DEBUG TRUE 
+#define MORESTATS FALSE 
 
 static int nVert = 0;
 static int **adjlist; //Adjacency list representation of input vertices
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
   srand (time(NULL));
 
 FILE *input;
-if(argc !=2) {printf("Wrong number of input arguments specified\n"); exit(-1);}
+if(argc < 2) {printf("Wrong number of input arguments specified\n"); exit(-1);}
 char *fname;
 fname = (char*)malloc(sizeof(char)*FILE_NAME_SIZE);
 fname = argv[1];
@@ -41,10 +41,12 @@ if(DEBUG) stackfile = fopen("stack.log", "w");
 initializeNallmem();
 
 int start_index = rand() % nVert;
+//start_index = 0;
 printf("start_node = %d\n", start_index + 1);
 biconn(vertices[start_index]->node, DUMMY_PARENT);
+//biconn(2,-1);
 printArtPoints();
-printBiconnComponents();
+//printBiconnComponents();
 if(DEBUG) fclose(logfile);
 if(DEBUG) fclose(stackfile);
 }
@@ -57,15 +59,15 @@ void biconn(int node, int parent)
   if(DEBUG) printVertices();
   Ncalls++;
   
-  int i, index, test_node, test_node_index, node_color, new_parent, parent_index, parent_stackPos;
+  int i, index, test_node, test_node_index, node_color, new_parent, parent_index;
   index = node - 1;
   parent_index = parent - 1;
 
-  Gnum++;
   vertices[index]->color = GRAY;
   vertices[index]->num = Gnum;
   vertices[index]->low = vertices[index]->num;
   new_parent = node;
+  Gnum++;
 
   //Push it onto the vertex stack
   vertexStack[stackEnd] = node;
@@ -78,50 +80,40 @@ void biconn(int node, int parent)
      test_node = adjlist[index][i];
      test_node_index = test_node - 1;
      node_color = vertices[test_node_index]->color;
-     if(node_color == WHITE)
+     if(node_color == WHITE) //forward edge
      {
         biconn(test_node, new_parent);
      }
-     else if(node_color == GRAY && test_node != parent) //Back edge to the parent
+     else if(node_color == GRAY && test_node != parent) //Back edge not to the parent
      {
-        //Lesser but now parent, pass on the goodness
-        vertices[index]->low = getLow(vertices[index]->low , vertices[test_node_index]->low);
+        if(vertices[test_node_index]->num < vertices[index]->num) //The vertex was visited before the current vertex
+        {
+           //Lesser but not parent, pass on the goodness
+           vertices[index]->low = getLow(vertices[index]->low , vertices[test_node_index]->num);
+
+           //Push edge on to the stack
+        }
+        else
+        {
+        }
      }
   }
   //Backtracking to parent
   if(parent != DUMMY_PARENT)
   {
-     if(vertices[index]->low < vertices[parent_index]->low )
+     vertices[parent_index]->low = getLow(vertices[parent_index]->low, vertices[index]->low);
+     if(vertices[index]->low < vertices[parent_index]->num )
      {
-        vertices[parent_index]->low = vertices[index]->low;
      }
      else //Break the bond
      {
         //Parent is an articulation point
         artPoints[artIndex] = parent;
         artIndex++;
-
-        //Peel off the vertices to the right of the articulation point in the stack
-        //To get the biconnected components
-        parent_stackPos = vertices[parent_index]->stackPos;
-        bcLength[bcI] = stackEnd - parent_stackPos; 
-        biconnComps[bcI] = (int*)malloc(sizeof(int)*bcLength[bcI]);
-     
-        if(DEBUG) printStack(TRUE); 
-        i = 0;
-        while(stackEnd > parent_stackPos) //peel elements to the right in the stack array
-        {
-           biconnComps[bcI][i] = vertexStack[stackEnd-1];
-           stackEnd--;
-           i++;
-        }
-        stackEnd++;
-        if(DEBUG) printStack(TRUE);
-        bcI++;
      }
+     //When all nodes reachable from a particular node are reached, color the node black
+     vertices[index]->color = BLACK;
   }
-  //When all nodes reachable from a particular node are reached, color the node black
-  vertices[index]->color = BLACK;
 }
 
 
@@ -277,7 +269,7 @@ void printArtPoints()
    int i;
    printf("Articulation points\n");
    printf("----------------------------------------------------------\n");
-   for(i = 0; i < artIndex; i++)
+   for(i = 0; i < artIndex - 1; i++)
    {
       printf("%d ", artPoints[i]);
    }
