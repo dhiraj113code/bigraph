@@ -28,6 +28,10 @@ static Pedge *edgeStack;
 static int eS_right = 0;
 static int rootNode;
 
+//Charging
+static int cv = 0;
+static int ce = 0;
+
 int main(int argc, char **argv)
 {
 /* initialize random seed: */
@@ -67,6 +71,12 @@ printBiconnVertices();
 if(DEBUG) fclose(logfile);
 if(DEBUG) fclose(stackfile);
 if(DEBUG) fclose(edgelog);
+
+printf("Number of Vertices = %d\n", nVert);
+printf("Number of Edges = %d\n", totalEdges);
+printf("Unary operations charged to vertices = %d\n", cv);
+printf("Unary operations charged to edges = %d\n", ce);
+printf("Total number of Unary operations charge = %d\n", cv + ce);
 }
 
 
@@ -77,48 +87,52 @@ void biconn(int node, int parent)
   if(DEBUG) printStack(FALSE);
   if(DEBUG) printVertices();
 
-  int eS_left = eS_right; //eS_left is local
+  //eS_left is local
+  int eS_left = eS_right;   cv++; 
   if(DEBUG) printEdgeStack(TREE_EDGE, eS_left);
   
   int i, index, test_node, test_node_index, node_color, new_parent, parent_index;
-  index = node - 1;
-  parent_index = parent - 1;
+  index = node - 1;   cv++;
+  parent_index = parent - 1;   cv++;
 
-  vertices[index]->color = GRAY;
-  vertices[index]->num = Gnum;
-  vertices[index]->low = vertices[index]->num;
-  new_parent = node;
-  Gnum++;
+  vertices[index]->color = GRAY;   cv++;
+  vertices[index]->num = Gnum;   cv++;
+  vertices[index]->low = vertices[index]->num;   cv++;
+  new_parent = node;   cv++;
+  Gnum++;   cv++;
 
   //Push it onto the vertex stack
-  vertexStack[stackEnd] = node;
-  vertices[index]->stackPos = stackEnd;
-  stackEnd++; 
+  vertexStack[stackEnd] = node;   cv++;
+  vertices[index]->stackPos = stackEnd;   cv++;
+  stackEnd++;   cv++;
   
   //Loop over the vertices in the adjacency list for this node
   for(i = 1; i < nEdges[index] + 1; i++)
   {
-     test_node = adjlist[index][i];
-     test_node_index = test_node - 1;
-     node_color = vertices[test_node_index]->color;
+     ce += 2;
+     test_node = adjlist[index][i];   ce++;
+     test_node_index = test_node - 1;   ce++;
+     node_color = vertices[test_node_index]->color;   ce++; ce++;
      if(node_color == WHITE) //forward edge
      {
-        edgeStack[eS_right]->tail = node;
-        edgeStack[eS_right]->head = test_node;
-        eS_right++;
-        biconn(test_node, new_parent);
+        edgeStack[eS_right]->tail = node;   ce++;
+        edgeStack[eS_right]->head = test_node;   ce++;
+        eS_right++;   ce++;
+        biconn(test_node, new_parent);  ce++;
      }
      else if(node_color == GRAY && test_node != parent) //Back edge not to the parent
      {
+        ce++;
         if(vertices[test_node_index]->num < vertices[index]->num) //The vertex was visited before the current vertex
         {
+           ce++;
            //Lesser but not parent, pass on the goodness
-           vertices[index]->low = getLow(vertices[index]->low , vertices[test_node_index]->num);
+           vertices[index]->low = getLow(vertices[index]->low , vertices[test_node_index]->num);   ce++;
 
            //Push edge on to the stack
-           edgeStack[eS_right]->tail = node;
-           edgeStack[eS_right]->head = test_node;
-           eS_right++;
+           edgeStack[eS_right]->tail = node;   ce++;
+           edgeStack[eS_right]->head = test_node;   ce++;
+           eS_right++;   ce++;
            if(DEBUG) printEdgeStack(FORWARD_EDGE, eS_left);
         }
         else
@@ -130,31 +144,33 @@ void biconn(int node, int parent)
   //Backtracking to parent
   if(parent != DUMMY_PARENT)
   {
-     vertices[parent_index]->low = getLow(vertices[parent_index]->low, vertices[index]->low);
+     vertices[parent_index]->low = getLow(vertices[parent_index]->low, vertices[index]->low);  cv++;
      if(vertices[index]->low < vertices[parent_index]->num )
      {
+        cv++;
         //Move back the current element stack pointer
         if(DEBUG) printEdgeStack(BACKWARD_EDGE, eS_left);
      }
      else //Break the bond
      {
+        cv += 2;
         //Parent is an articulation point
         //Search if it is already present in the articulation points list. Else add the vertex.
-        artPoints[artIndex] = parent;
-        artIndex++;
+        artPoints[artIndex] = parent;   cv++;
+        artIndex++;   cv++;
 
         //Strip out the edges corresponding to this articulatio point
         if(DEBUG) printBiconn(eS_left-1, eS_right);
 
         //Add biconnected components vertices.
         //Search the array to check if the vertex is already there. Else add the vertex
-        storeBiconnVerts(eS_left-1, eS_right);
+        storeBiconnVerts(eS_left-1, eS_right);   cv++;
 
-        eS_right = eS_left-1;
+        eS_right = eS_left-1;   cv++;
         if(DEBUG) printEdgeStack(ARTICULATE_EDGE, eS_left);
      }
      //When all nodes reachable from a particular node are reached, color the node black
-     vertices[index]->color = BLACK;
+     vertices[index]->color = BLACK;   cv++;
   }
 }
 
@@ -400,25 +416,26 @@ void storeBiconnVerts(int left, int right)
 {
    int i;
    int l = 0;
-   int size= right - left;
+   int size= right - left;   cv++;
    biconnComps[bcI] = (int*)malloc(sizeof(int)*2*size); //Allocating the maximum possible memory for this
       
    for(i = left; i < right; i++)
    {
+      cv += 2;
       //Check if the node is already present. If not add at the node to the biconn vertices list
       if(!(simpleSearch(edgeStack[i]->tail, biconnComps[bcI], l)))
       {
-         biconnComps[bcI][l] = edgeStack[i]->tail;
-         l++;
+         biconnComps[bcI][l] = edgeStack[i]->tail;   cv++;
+         l++;   cv++;
       }
       if(!(simpleSearch(edgeStack[i]->head, biconnComps[bcI], l)))
       {
-         biconnComps[bcI][l] = edgeStack[i]->head;
-         l++;
+         biconnComps[bcI][l] = edgeStack[i]->head;   cv++;
+         l++;   cv++;
       }
    }
-   bcLength[bcI] = l;
-   bcI++;
+   bcLength[bcI] = l;   cv++;
+   bcI++;   cv++;
 }
 
 
