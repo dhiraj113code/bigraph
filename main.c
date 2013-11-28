@@ -5,7 +5,8 @@
 #include "main.h"
 #define FILE_NAME_SIZE 100
 #define DEBUG FALSE 
-#define MORESTATS FALSE 
+#define MORESTATS FALSE
+#define CHARGING FALSE 
 
 static int nVert = 0;
 static int **adjlist; //Adjacency list representation of input vertices
@@ -83,12 +84,15 @@ fclose(Aa);
 fclose(Ab);
 fclose(Ac);
 
-printf("Number of Vertices = %d\n", nVert);
-printf("Number of Edges = %d\n", totalEdges);
-printf("Unary operations charged to vertices = %d\n", cv);
-printf("Unary operations charged to edges = %d\n", ce);
-printf("Total number of Unary operations charge = %d\n", cv + ce);
-printVertexCharge();
+if(CHARGING)
+{
+   printf("Number of Vertices = %d\n", nVert);
+   printf("Number of Edges = %d\n", totalEdges);
+   printf("Unary operations charged to vertices = %d\n", cv);
+   printf("Unary operations charged to edges = %d\n", ce);
+   printf("Total number of Unary operations charge = %d\n", cv + ce);
+   printVertexCharge();
+}
 }
 
 
