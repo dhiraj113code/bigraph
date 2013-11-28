@@ -305,12 +305,25 @@ int getLow(int a, int b)
 
 void printArtPoints()
 {
+   //Remove duplicates if any and print
+   //Create a duplicate free array
+   int local_artPoints[artIndex-1];
+   int local_artsize = 0;
    int i;
-   printf("Articulation points\n");
-   printf("----------------------------------------------------------\n");
    for(i = 0; i < artIndex-1; i++)
    {
-      printf("%d ", artPoints[i]);
+      if(!(simpleSearch(artPoints[i], local_artPoints, local_artsize)))
+      {
+         local_artPoints[local_artsize] = artPoints[i];
+         local_artsize++;
+      }
+   }
+   qsort (local_artPoints, local_artsize, sizeof(int), compare);
+   printf("Articulation points\n");
+   printf("----------------------------------------------------------\n");
+   for(i = 0; i < local_artsize; i++)
+   {
+      printf("%d ", local_artPoints[i]);
    }
    printf("\n");
    printf("----------------------------------------------------------\n");
@@ -424,4 +437,10 @@ for(k = 0; k < bcI; k++)
    printf("\n");
 }
 printf("----------------------------------------------------------------------------------------\n");
+}
+
+
+int compare (const void * a, const void * b)
+{
+  return ( *(int*)a - *(int*)b );
 }

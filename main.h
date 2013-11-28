@@ -47,3 +47,5 @@ void printBiconn(int left, int right);
 int simpleSearch(int value, int *A, int n);
 void storeBiconnVerts(int left, int right);
 void globalPrint();
+void simpleSort();
+int compare (const void * a, const void * b);
