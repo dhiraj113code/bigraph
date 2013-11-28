@@ -47,15 +47,16 @@ if(DEBUG)  edgelog = fopen("edge.log", "w");
 initializeNallmem();
 
 int start_index = rand() % nVert;
-//start_index = 0;
 printf("start_node = %d\n", start_index + 1);
 rootNode = vertices[start_index]->node;
 biconn(rootNode, DUMMY_PARENT);
 printArtPoints();
+printBiconnVertices();
+
+/*--------------------------------------------*/
 if(DEBUG) fclose(logfile);
 if(DEBUG) fclose(stackfile);
 if(DEBUG) fclose(edgelog);
-globalPrint();
 }
 
 
@@ -309,7 +310,8 @@ void printArtPoints()
    //Create a duplicate free array
    int local_artPoints[artIndex-1];
    int local_artsize = 0;
-   int i;
+   int i, j;
+   int artvertex;
    for(i = 0; i < artIndex-1; i++)
    {
       if(!(simpleSearch(artPoints[i], local_artPoints, local_artsize)))
@@ -423,7 +425,7 @@ return FALSE;
 }
 
 
-void globalPrint()
+void printBiconnVertices()
 {
 int k,i,ksort;
 Pele *elements;
@@ -443,11 +445,6 @@ for(k = 0; k < bcI; k++)
 }
 
 qsort(elements, bcI, sizeof(Pele), compare2); //sorting the array of first elements
-/*for(k = 0; k < bcI; k++)
-   printf("(%d %d) ", elements[k]->index, elements[k]->node);
-printf("\n");*/
-
-
 
 printf("----------------------------------------------------------------------------------------\n");
 printf("Biconnected components\n");
@@ -462,6 +459,20 @@ for(k = 0; k < bcI; k++)
    printf("\n");
 }
 printf("----------------------------------------------------------------------------------------\n");
+printf("Articulation bridges\n");
+printf("----------------------------------------------------------------------------------------\n");
+for(k = 0; k < bcI; k++)
+{
+   ksort = elements[k]->index;
+   if(bcLength[ksort] == 2)
+   {
+      for(i = 0; i < bcLength[ksort]; i++)
+      {
+         printf("%d ", biconnComps[ksort][i]);
+      }
+      printf("\n");
+   }
+}
 }
 
 
@@ -490,3 +501,4 @@ int compare2 (const void * a, const void * b)
   else
      return -1;
 }
+
