@@ -4,7 +4,7 @@
 #include <string.h>
 #include "main.h"
 #define FILE_NAME_SIZE 100
-#define DEBUG TRUE 
+#define DEBUG FALSE 
 #define MORESTATS FALSE 
 
 static int nVert = 0;
@@ -133,7 +133,7 @@ void biconn(int node, int parent)
         artIndex++;
 
         //Strip out the edges corresponding to this articulatio point
-        printBiconn(eS_left-1, eS_right);
+        if(DEBUG) printBiconn(eS_left-1, eS_right);
 
         //Add biconnected components vertices.
         //Search the array to check if the vertex is already there. Else add the vertex
@@ -318,6 +318,7 @@ void printArtPoints()
          local_artsize++;
       }
    }
+   
    qsort (local_artPoints, local_artsize, sizeof(int), compare);
    printf("Articulation points\n");
    printf("----------------------------------------------------------\n");
@@ -424,15 +425,39 @@ return FALSE;
 
 void globalPrint()
 {
-int k,i;
+int k,i,ksort;
+Pele *elements;
+elements = (Pele*)malloc(sizeof(Pele)*bcI);
+for(k = 0; k < bcI; k++)
+   elements[k] = (Pele)malloc(sizeof(ele));
+
+//Sorting each biconnected components vertex lines
+
+for(k = 0; k < bcI; k++)
+{
+   qsort (biconnComps[k], bcLength[k], sizeof(int), compare);
+   //Creating an array of the first elements of the each line
+   elements[k]->node = biconnComps[k][0];
+   elements[k]->index = k;
+   elements[k]->node2 = biconnComps[k][1];
+}
+
+qsort(elements, bcI, sizeof(Pele), compare2); //sorting the array of first elements
+/*for(k = 0; k < bcI; k++)
+   printf("(%d %d) ", elements[k]->index, elements[k]->node);
+printf("\n");*/
+
+
+
 printf("----------------------------------------------------------------------------------------\n");
 printf("Biconnected components\n");
 printf("----------------------------------------------------------------------------------------\n");
 for(k = 0; k < bcI; k++)
 {
-   for(i = 0; i < bcLength[k]; i++)
+   ksort = elements[k]->index;
+   for(i = 0; i < bcLength[ksort]; i++)
    {
-      printf("%d ", biconnComps[k][i]); 
+      printf("%d ", biconnComps[ksort][i]); 
    }
    printf("\n");
 }
@@ -443,4 +468,25 @@ printf("------------------------------------------------------------------------
 int compare (const void * a, const void * b)
 {
   return ( *(int*)a - *(int*)b );
+}
+
+
+int compare2 (const void * a, const void * b)
+{
+  int comp = (*(Pele*)a)->node - (*(Pele*)b)->node;
+  int comp2;
+  if(comp > 0)
+     return 1;
+  else if(comp == 0)
+  {
+     comp2 = (*(Pele*)a)->node2 - (*(Pele*)b)->node2;
+     if(comp2 >0)
+        return 1;
+     else if(comp2 == 0)
+        return 0;
+     else
+        return -1;
+  }
+  else
+     return -1;
 }

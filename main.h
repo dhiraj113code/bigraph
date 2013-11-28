@@ -32,6 +32,13 @@ typedef struct edge_ {
 } edge, *Pedge;
 
 
+typedef struct ele_{
+   unsigned node;
+   unsigned index;
+   unsigned node2;
+} ele, *Pele;
+
+
 void biconn(int node, int parent);
 
 int read_file(char fname[]);
@@ -49,3 +56,4 @@ void storeBiconnVerts(int left, int right);
 void globalPrint();
 void simpleSort();
 int compare (const void * a, const void * b);
+int compare2 (const void * a, const void * b);
