@@ -6,7 +6,7 @@
 #define FILE_NAME_SIZE 100
 #define DEBUG FALSE 
 #define MORESTATS FALSE
-#define CHARGING FALSE 
+#define CHARGING TRUE 
 
 static int nVert = 0;
 static int **adjlist; //Adjacency list representation of input vertices
@@ -86,12 +86,16 @@ fclose(Ac);
 
 if(CHARGING)
 {
-   printf("Number of Vertices = %d\n", nVert);
-   printf("Number of Edges = %d\n", totalEdges);
-   printf("Unary operations charged to vertices = %d\n", cv);
-   printf("Unary operations charged to edges = %d\n", ce);
-   printf("Total number of Unary operations charge = %d\n", cv + ce);
-   printVertexCharge();
+   if(DEBUG) printf("Number of Vertices = %d\n", nVert);
+   if(DEBUG) printf("Number of Edges = %d\n", totalEdges);
+   printf("----------------------------------------------------------------------------------------\n");
+   printf("Total number of operations charged to all vertices is = %d\n", cv);
+   printf("Total number of operations charged to all edges is = %d\n", ce);
+   printf("Total number of operations is = %d\n", cv + ce);
+   printf("Constant factor vertex = %.2f\n", cv*1.0/nVert);
+   printf("Constant factor edge = %.2f\n", ce*2.0/totalEdges);
+   printf("----------------------------------------------------------------------------------------\n");
+   if(MORESTATS) printVertexCharge();
 }
 }
 
@@ -376,7 +380,7 @@ void printArtPoints()
    }
    printf("\n");
    fprintf(Aa, "\n");
-   printf("----------------------------------------------------------\n");
+   //printf("----------------------------------------------------------\n");
 }
 
 void printStack(int isPeel)
