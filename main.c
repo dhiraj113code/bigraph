@@ -31,25 +31,35 @@ static int rootNode;
 int main(int argc, char **argv)
 {
 /* initialize random seed: */
-  srand (time(NULL));
-
+srand (time(NULL));
+int start_index;
 FILE *input;
-if(argc < 2) {printf("Wrong number of input arguments specified\n"); exit(-1);}
+if(argc < 2) {printf("Wrong number of input arguments specified specify the file name\n"); exit(-1);}
 char *fname;
 fname = (char*)malloc(sizeof(char)*FILE_NAME_SIZE);
 fname = argv[1];
-read_file(fname);
-if(DEBUG && MORESTATS) printAdjList();
 
+//Reading the input file and storing the vertices in adjlist
+read_file(fname);
+
+if(DEBUG && MORESTATS) printAdjList();
 if(DEBUG) logfile = fopen("debug.log", "w");
 if(DEBUG) stackfile = fopen("stack.log", "w");
 if(DEBUG)  edgelog = fopen("edge.log", "w");
+
+//All memory allocation and other initialization stuff done here
 initializeNallmem();
 
-int start_index = rand() % nVert;
-printf("start_node = %d\n", start_index + 1);
+//Choosing a random start node to start the DFS
+start_index = rand() % nVert; //The start node is determined randomnly
 rootNode = vertices[start_index]->node;
+
+//Call the the recursive biconnectivity function
+//**************************************************************
 biconn(rootNode, DUMMY_PARENT);
+//**************************************************************
+
+printf("start_node = %d\n", start_index + 1);
 printArtPoints();
 printBiconnVertices();
 
@@ -63,10 +73,10 @@ if(DEBUG) fclose(edgelog);
 
 void biconn(int node, int parent)
 {
+  Ncalls++;
   if(DEBUG) printStack(FALSE);
   if(DEBUG) printVertices();
 
-  Ncalls++;
   int eS_left = eS_right; //eS_left is local
   if(DEBUG) printEdgeStack(TREE_EDGE, eS_left);
   
@@ -160,8 +170,7 @@ int read_file(char fname[])
 
    //Determine number of lines in the file
    pFile = fopen(fname, "r");
-   if(pFile == NULL)
-       perror("Error opening file");
+   if(pFile == NULL) {printf("error_info : Specified file not found\n"); exit(-1);}
    else
    {
       while( fgets (mystring , 100 , pFile) != NULL )
