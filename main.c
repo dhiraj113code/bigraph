@@ -26,6 +26,7 @@ static FILE *logfile, *stackfile, *edgelog;
 static totalEdges = 0;
 static Pedge *edgeStack;
 static int eS_right = 0;
+static int rootNode;
 
 int main(int argc, char **argv)
 {
@@ -48,12 +49,13 @@ initializeNallmem();
 int start_index = rand() % nVert;
 //start_index = 0;
 printf("start_node = %d\n", start_index + 1);
-biconn(vertices[start_index]->node, DUMMY_PARENT);
+rootNode = vertices[start_index]->node;
+biconn(rootNode, DUMMY_PARENT);
 printArtPoints();
 if(DEBUG) fclose(logfile);
 if(DEBUG) fclose(stackfile);
 if(DEBUG) fclose(edgelog);
-printf("total edges = %d\n", totalEdges);
+globalPrint();
 }
 
 
@@ -126,11 +128,17 @@ void biconn(int node, int parent)
      else //Break the bond
      {
         //Parent is an articulation point
+        //Search if it is already present in the articulation points list. Else add the vertex.
         artPoints[artIndex] = parent;
         artIndex++;
 
         //Strip out the edges corresponding to this articulatio point
         printBiconn(eS_left-1, eS_right);
+
+        //Add biconnected components vertices.
+        //Search the array to check if the vertex is already there. Else add the vertex
+        storeBiconnVerts(eS_left-1, eS_right);
+
         eS_right = eS_left-1;
         if(DEBUG) printEdgeStack(ARTICULATE_EDGE, eS_left);
      }
@@ -300,7 +308,7 @@ void printArtPoints()
    int i;
    printf("Articulation points\n");
    printf("----------------------------------------------------------\n");
-   for(i = 0; i < artIndex - 1; i++)
+   for(i = 0; i < artIndex-1; i++)
    {
       printf("%d ", artPoints[i]);
    }
@@ -354,10 +362,66 @@ fprintf(edgelog, "\n");
 
 void printBiconn(int left, int right)
 {
-int i;
-for(i = left; i < right; i++)
-{
-   printf("(%d,%d) ", edgeStack[i]->tail, edgeStack[i]->head);
+   int i;
+   for(i = left; i < right; i++)
+   {
+      printf("(%d,%d) ", edgeStack[i]->tail, edgeStack[i]->head);
+   }
+   printf("\n");
 }
-printf("\n");
+
+
+void storeBiconnVerts(int left, int right)
+{
+   int i;
+   int l = 0;
+   int size= right - left;
+   biconnComps[bcI] = (int*)malloc(sizeof(int)*2*size); //Allocating the maximum possible memory for this
+      
+   for(i = left; i < right; i++)
+   {
+      //Check if the node is already present. If not add at the node to the biconn vertices list
+      if(!(simpleSearch(edgeStack[i]->tail, biconnComps[bcI], l)))
+      {
+         biconnComps[bcI][l] = edgeStack[i]->tail;
+         l++;
+      }
+      if(!(simpleSearch(edgeStack[i]->head, biconnComps[bcI], l)))
+      {
+         biconnComps[bcI][l] = edgeStack[i]->head;
+         l++;
+      }
+   }
+   bcLength[bcI] = l;
+   bcI++;
+}
+
+
+int simpleSearch(int value, int *A, int n)
+{
+int i;
+for(i = 0; i < n; i++)
+{
+   if(A[i] == value)
+      return TRUE;
+}
+return FALSE;
+}
+
+
+void globalPrint()
+{
+int k,i;
+printf("----------------------------------------------------------------------------------------\n");
+printf("Biconnected components\n");
+printf("----------------------------------------------------------------------------------------\n");
+for(k = 0; k < bcI; k++)
+{
+   for(i = 0; i < bcLength[k]; i++)
+   {
+      printf("%d ", biconnComps[k][i]); 
+   }
+   printf("\n");
+}
+printf("----------------------------------------------------------------------------------------\n");
 }

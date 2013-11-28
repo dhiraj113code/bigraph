@@ -44,3 +44,6 @@ void printArtPoints();
 void printStack();
 void printEdgeStack(int edgeType, int left);
 void printBiconn(int left, int right);
+int simpleSearch(int value, int *A, int n);
+void storeBiconnVerts(int left, int right);
+void globalPrint();
