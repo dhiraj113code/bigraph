@@ -57,3 +57,4 @@ void printBiconnVertices();
 void simpleSort();
 int compare (const void * a, const void * b);
 int compare2 (const void * a, const void * b);
+void printVertexCharge();

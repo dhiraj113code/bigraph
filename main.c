@@ -28,9 +28,14 @@ static Pedge *edgeStack;
 static int eS_right = 0;
 static int rootNode;
 
+//Output files
+static FILE *Aa, *Ab, *Ac;
+
 //Charging
 static int cv = 0;
 static int ce = 0;
+static int *cvi;
+static int *cei;
 
 int main(int argc, char **argv)
 {
@@ -50,6 +55,9 @@ if(DEBUG && MORESTATS) printAdjList();
 if(DEBUG) logfile = fopen("debug.log", "w");
 if(DEBUG) stackfile = fopen("stack.log", "w");
 if(DEBUG)  edgelog = fopen("edge.log", "w");
+Aa = fopen("Aa.out", "w");
+Ab = fopen("Ab.out", "w");
+Ac = fopen("Ac.out", "w");
 
 //All memory allocation and other initialization stuff done here
 initializeNallmem();
@@ -71,12 +79,16 @@ printBiconnVertices();
 if(DEBUG) fclose(logfile);
 if(DEBUG) fclose(stackfile);
 if(DEBUG) fclose(edgelog);
+fclose(Aa);
+fclose(Ab);
+fclose(Ac);
 
 printf("Number of Vertices = %d\n", nVert);
 printf("Number of Edges = %d\n", totalEdges);
 printf("Unary operations charged to vertices = %d\n", cv);
 printf("Unary operations charged to edges = %d\n", ce);
 printf("Total number of Unary operations charge = %d\n", cv + ce);
+printVertexCharge();
 }
 
 
@@ -93,17 +105,17 @@ void biconn(int node, int parent)
   
   int i, index, test_node, test_node_index, node_color, new_parent, parent_index;
   index = node - 1;   cv++;
-  parent_index = parent - 1;   cv++;
+  parent_index = parent - 1;   cv++;   cvi[index]++;
 
-  vertices[index]->color = GRAY;   cv++;
-  vertices[index]->num = Gnum;   cv++;
-  vertices[index]->low = vertices[index]->num;   cv++;
-  new_parent = node;   cv++;
-  Gnum++;   cv++;
+  vertices[index]->color = GRAY;   cv++;   cvi[index]++;
+  vertices[index]->num = Gnum;   cv++;   cvi[index]++;
+  vertices[index]->low = vertices[index]->num;   cv++;   cvi[index]++;
+  new_parent = node;   cv++;   cvi[index]++;
+  Gnum++;   cv++;   cvi[index]++;
 
   //Push it onto the vertex stack
-  vertexStack[stackEnd] = node;   cv++;
-  vertices[index]->stackPos = stackEnd;   cv++;
+  vertexStack[stackEnd] = node;   cv++;    cvi[index]++;
+  vertices[index]->stackPos = stackEnd;   cv++;   cvi[index]++;
   stackEnd++;   cv++;
   
   //Loop over the vertices in the adjacency list for this node
@@ -144,33 +156,33 @@ void biconn(int node, int parent)
   //Backtracking to parent
   if(parent != DUMMY_PARENT)
   {
-     vertices[parent_index]->low = getLow(vertices[parent_index]->low, vertices[index]->low);  cv++;
+     vertices[parent_index]->low = getLow(vertices[parent_index]->low, vertices[index]->low);  cv++;   cvi[index]++;
      if(vertices[index]->low < vertices[parent_index]->num )
      {
-        cv++;
+        cv++;   cvi[index]++;
         //Move back the current element stack pointer
         if(DEBUG) printEdgeStack(BACKWARD_EDGE, eS_left);
      }
      else //Break the bond
      {
-        cv += 2;
+        cv += 2;   cvi[index] += 2;
         //Parent is an articulation point
         //Search if it is already present in the articulation points list. Else add the vertex.
-        artPoints[artIndex] = parent;   cv++;
-        artIndex++;   cv++;
+        artPoints[artIndex] = parent;   cv++;   cvi[index]++;
+        artIndex++;   cv++;   cvi[index]++;
 
         //Strip out the edges corresponding to this articulatio point
         if(DEBUG) printBiconn(eS_left-1, eS_right);
 
         //Add biconnected components vertices.
         //Search the array to check if the vertex is already there. Else add the vertex
-        storeBiconnVerts(eS_left-1, eS_right);   cv++;
+        storeBiconnVerts(eS_left-1, eS_right);   cv += 5*(eS_right-eS_left+1);   cvi[index] += 5*(eS_right-eS_left+1);
 
-        eS_right = eS_left-1;   cv++;
+        eS_right = eS_left-1;   cv++;   cvi[index]++;
         if(DEBUG) printEdgeStack(ARTICULATE_EDGE, eS_left);
      }
      //When all nodes reachable from a particular node are reached, color the node black
-     vertices[index]->color = BLACK;   cv++;
+     vertices[index]->color = BLACK;   cv++;   cvi[index]++;
   }
 }
 
@@ -282,6 +294,10 @@ for(i = 0; i < totalEdges; i++)
 {
    edgeStack[i] = (Pedge)malloc(sizeof(edge));
 }
+
+//Memory for counters
+cvi = (int*)malloc(sizeof(int)*nVert);
+cei = (int*)malloc(sizeof(int)*totalEdges);
 }
 
 
@@ -352,8 +368,10 @@ void printArtPoints()
    for(i = 0; i < local_artsize; i++)
    {
       printf("%d ", local_artPoints[i]);
+      fprintf(Aa, "%d ", local_artPoints[i]);
    }
    printf("\n");
+   fprintf(Aa, "\n");
    printf("----------------------------------------------------------\n");
 }
 
@@ -416,26 +434,25 @@ void storeBiconnVerts(int left, int right)
 {
    int i;
    int l = 0;
-   int size= right - left;   cv++;
+   int size= right - left;
    biconnComps[bcI] = (int*)malloc(sizeof(int)*2*size); //Allocating the maximum possible memory for this
       
    for(i = left; i < right; i++)
    {
-      cv += 2;
       //Check if the node is already present. If not add at the node to the biconn vertices list
       if(!(simpleSearch(edgeStack[i]->tail, biconnComps[bcI], l)))
       {
-         biconnComps[bcI][l] = edgeStack[i]->tail;   cv++;
-         l++;   cv++;
+         biconnComps[bcI][l] = edgeStack[i]->tail;
+         l++;
       }
       if(!(simpleSearch(edgeStack[i]->head, biconnComps[bcI], l)))
       {
-         biconnComps[bcI][l] = edgeStack[i]->head;   cv++;
-         l++;   cv++;
+         biconnComps[bcI][l] = edgeStack[i]->head;
+         l++;
       }
    }
-   bcLength[bcI] = l;   cv++;
-   bcI++;   cv++;
+   bcLength[bcI] = l;
+   bcI++;
 }
 
 
@@ -480,9 +497,11 @@ for(k = 0; k < bcI; k++)
    ksort = elements[k]->index;
    for(i = 0; i < bcLength[ksort]; i++)
    {
-      printf("%d ", biconnComps[ksort][i]); 
+      printf("%d ", biconnComps[ksort][i]);
+      fprintf(Ac, "%d ", biconnComps[ksort][i]);
    }
    printf("\n");
+   fprintf(Ac, "\n");
 }
 printf("----------------------------------------------------------------------------------------\n");
 printf("Articulation bridges\n");
@@ -495,8 +514,10 @@ for(k = 0; k < bcI; k++)
       for(i = 0; i < bcLength[ksort]; i++)
       {
          printf("%d ", biconnComps[ksort][i]);
+         fprintf(Ab, "%d ", biconnComps[ksort][i]);
       }
       printf("\n");
+      fprintf(Ab, "\n");
    }
 }
 }
@@ -526,5 +547,20 @@ int compare2 (const void * a, const void * b)
   }
   else
      return -1;
+}
+
+
+void printVertexCharge()
+{
+int sum = 0;
+printf("----------------------------------------------------------------------------------------\n");
+   int i;
+   for(i = 0; i < nVert; i++)
+   {
+      printf("cv[%d] = %d\n", i, cvi[i]);
+      sum += cvi[i];
+   }
+   printf("sum = %d\n", sum);
+printf("----------------------------------------------------------------------------------------\n");
 }
 
